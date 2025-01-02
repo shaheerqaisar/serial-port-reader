@@ -18,8 +18,7 @@ async function connectAndReadSerialPort() {
             const weightData = new TextDecoder().decode(value).trim();
             console.log("Weight Data:", weightData);
 
-            // Send the weight data to your Flask API
-            await fetch("https://shaheerqaisar.pythonanywhere.com/api/weighscale", {
+            fetch("https://shaheerqaisar.pythonanywhere.com/api/weight", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ weight: weightData }),
