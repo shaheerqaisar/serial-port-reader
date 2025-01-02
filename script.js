@@ -1,52 +1,41 @@
-// References to HTML elements
-const connectButton = document.getElementById("connectButton");
-const output = document.getElementById("output");
-
-let port;
-let reader;
-
-// Function to connect to a serial port
-async function connectToSerialPort() {
+async function connectAndReadSerialPort() {
     try {
         // Request user to select a serial port
-        port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 }); // Set the baud rate (match your device's setting)
+        const port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 }); // Match the baud rate with your device
 
-        output.textContent += "Serial port connected.\n";
-
-        // Read data from the serial port
-        readFromSerialPort();
-    } catch (error) {
-        console.error("Error connecting to serial port:", error);
-        output.textContent += "Failed to connect to serial port.\n";
-    }
-}
-
-// Function to read data from the serial port
-async function readFromSerialPort() {
-    try {
-        const textDecoder = new TextDecoderStream();
-        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
-        reader = textDecoder.readable.getReader();
-
-        output.textContent += "Reading data...\n";
+        const reader = port.readable.getReader();
+        console.log("Serial port connected and ready.");
 
         while (true) {
             const { value, done } = await reader.read();
             if (done) {
-                output.textContent += "Reader stopped.\n";
+                console.log("Reader closed.");
                 break;
             }
-            // Append the received data to the output
-            output.textContent += `Received: ${value}\n`;
+
+            // Decode and process the data
+            const weightData = new TextDecoder().decode(value).trim();
+            console.log("Weight Data:", weightData);
+
+            // Send the weight data to your Flask API
+            await fetch("https://shaheerqaisar.pythonanywhere.com/api/weighscale", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ weight: weightData }),
+            })
+                .then((response) => response.json())
+                .then((data) => console.log("API Response:", data))
+                .catch((error) => console.error("Error sending data to API:", error));
         }
 
         reader.releaseLock();
+        await port.close();
+        console.log("Serial port disconnected.");
     } catch (error) {
-        console.error("Error reading from serial port:", error);
-        output.textContent += "Error reading from serial port.\n";
+        console.error("Error connecting to the serial port:", error);
     }
 }
 
-// Event listener for the button
-connectButton.addEventListener("click", connectToSerialPort);
+// Add an event listener to trigger the function
+document.getElementById("connectButton").addEventListener("click", connectAndReadSerialPort);
