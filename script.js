@@ -1,45 +1,53 @@
+// References to HTML elements
+const connectButton = document.getElementById("connectButton");
+const output = document.getElementById("output");
+
+// Function to log messages to the UI
+function logMessage(message) {
+    output.textContent += `${message}\n`;
+}
+
 async function connectAndReadSerialPort() {
     try {
-        // Request and open the serial port
-        console.log("Requesting serial port...");
+        logMessage("Requesting serial port...");
         const port = await navigator.serial.requestPort();
         await port.open({ baudRate: 9600 });
-        console.log("Serial port connected.");
+        logMessage("Serial port connected.");
 
         const reader = port.readable.getReader();
-        console.log("Reader initialized, waiting for data...");
+        logMessage("Reader initialized. Waiting for data...");
 
         while (true) {
             const { value, done } = await reader.read();
             if (done) {
-                console.log("Reader stopped.");
+                logMessage("Reader stopped.");
                 break;
             }
 
             const weightData = new TextDecoder().decode(value).trim();
-            console.log("Received weight data:", weightData);
+            logMessage(`Received weight data: ${weightData}`);
 
-            // Send data to the API
             try {
                 const response = await fetch("https://shaheerqaisar.pythonanywhere.com/api/weight", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ weight: weightData }),
                 });
+
                 const responseData = await response.json();
-                console.log("API Response:", responseData);
+                logMessage(`API Response: ${JSON.stringify(responseData)}`);
             } catch (apiError) {
-                console.error("Error sending data to API:", apiError);
+                logMessage(`Error sending data to API: ${apiError}`);
             }
         }
 
         reader.releaseLock();
         await port.close();
-        console.log("Serial port disconnected.");
+        logMessage("Serial port disconnected.");
     } catch (error) {
-        console.error("Error during serial port communication:", error);
+        logMessage(`Error during serial port communication: ${error}`);
     }
 }
 
 // Add an event listener to the button
-document.getElementById("connectButton").addEventListener("click", connectAndReadSerialPort);
+connectButton.addEventListener("click", connectAndReadSerialPort);
