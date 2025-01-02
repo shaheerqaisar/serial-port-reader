@@ -10,6 +10,8 @@ function logMessage(message) {
 async function connectAndReadSerialPort() {
     try {
         logMessage("Requesting serial port...");
+        const port1 = await serial.requestPort();
+        logMessage(port1 );
         const port = await navigator.serial.requestPort();
         await port.open({ baudRate: 9600 });
         logMessage("Serial port connected.");
